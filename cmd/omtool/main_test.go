@@ -88,6 +88,21 @@ func TestOpenOutputFile(t *testing.T) {
 	}
 }
 
+func TestOpenOutputStdout(t *testing.T) {
+	for _, path := range []string{"-", ""} {
+		wc, err := openOutput(path)
+		if err != nil {
+			t.Fatalf("openOutput(%q): %v", path, err)
+		}
+		if _, ok := wc.(nopWriteCloser); !ok {
+			t.Errorf("openOutput(%q) = %T, want nopWriteCloser", path, wc)
+		}
+		if err := wc.Close(); err != nil {
+			t.Errorf("Close: %v", err)
+		}
+	}
+}
+
 func TestNopWriteCloser(t *testing.T) {
 	var buf strings.Builder
 	wc := nopWriteCloser{&buf}

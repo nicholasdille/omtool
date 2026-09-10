@@ -89,6 +89,30 @@ func TestBuildWriteRequestSkipsUnnamedFamily(t *testing.T) {
 	}
 }
 
+func TestBuildWriteRequestUntyped(t *testing.T) {
+	families := []*dto.MetricFamily{
+		{
+			Name: proto.String("mystat"), Type: dto.MetricType_UNTYPED.Enum(),
+			Metric: []*dto.Metric{{Untyped: &dto.Untyped{Value: proto.Float64(42)}}},
+		},
+	}
+	wr := buildWriteRequest(families, 1000)
+	if len(wr.Timeseries) != 1 || wr.Timeseries[0].Samples[0].Value != 42 {
+		t.Fatalf("unexpected write request: %+v", wr)
+	}
+}
+
+func TestLabelPairsToPrompbExcludesMetricName(t *testing.T) {
+	pairs := []*dto.LabelPair{
+		{Name: proto.String("__name__"), Value: proto.String("foo")},
+		{Name: proto.String("job"), Value: proto.String("bar")},
+	}
+	got := labelPairsToPrompb(pairs)
+	if len(got) != 1 || got[0].Name != "job" {
+		t.Errorf("expected __name__ label excluded, got %+v", got)
+	}
+}
+
 func TestBuildWriteRequestHistogram(t *testing.T) {
 	families := []*dto.MetricFamily{
 		{

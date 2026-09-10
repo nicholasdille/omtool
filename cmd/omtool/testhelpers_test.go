@@ -1,6 +1,9 @@
 package main
 
-import "os"
+import (
+	"errors"
+	"os"
+)
 
 // writeTempFile is a small test helper for writing fixture files.
 func writeTempFile(path, content string) error {
@@ -15,4 +18,21 @@ func readTempFile(path string) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+// failAfterWriter is an io.Writer test double that succeeds for the first
+// n writes and then fails every write after that, used to exercise error
+// handling paths around repeated Fprintf/Write calls.
+type failAfterWriter struct {
+	n int
+}
+
+var errFailAfterWriter = errors.New("failAfterWriter: simulated write failure")
+
+func (f *failAfterWriter) Write(p []byte) (int, error) {
+	if f.n <= 0 {
+		return 0, errFailAfterWriter
+	}
+	f.n--
+	return len(p), nil
 }
