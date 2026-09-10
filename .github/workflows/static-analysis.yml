@@ -1,7 +1,9 @@
 name: static-analysis
 
 on:
-  push: {}
+  push:
+    tags-ignore:
+      - '**'
 
 permissions:
   contents: read
