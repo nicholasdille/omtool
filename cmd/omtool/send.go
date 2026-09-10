@@ -29,6 +29,13 @@ import (
 // X-Prometheus-Remote-Write-Version header, per the remote-write protocol.
 const remoteWriteVersion = "0.1.0"
 
+// defaultURLs maps -target values to their conventional local remote-write
+// endpoint, used when -url is left empty.
+var defaultURLs = map[string]string{
+	"prometheus": "http://localhost:9090/api/v1/write",
+	"mimir":      "http://localhost:8080/api/v1/push",
+}
+
 // headerList collects repeated -header "Key: Value" flags.
 type headerList []string
 
@@ -70,7 +77,7 @@ func newSendCmd() *cobra.Command {
 	fs.StringVar(&inPath, "in", "-", `input file ("-" for stdin)`)
 	fs.StringVar(&from, "from", string(inAuto), "input format: auto|openmetrics(om)|protobuf(pb)")
 	fs.StringVar(&pbFmtFl, "pb-format", string(pbBinary), "protobuf framing, for --from=protobuf: delimited|binary|text|json")
-	fs.StringVar(&url, "url", "", "remote-write endpoint URL, e.g. http://localhost:9090/api/v1/write (Prometheus) or http://localhost:8080/api/v1/push (Mimir)")
+	fs.StringVar(&url, "url", "", "remote-write endpoint URL; defaults to http://localhost:9090/api/v1/write for -target=prometheus or http://localhost:8080/api/v1/push for -target=mimir")
 	fs.StringVar(&target, "target", "prometheus", "target backend, used only to sanity-check flags: prometheus|mimir (Mimir requires -tenant-id unless multi-tenancy is disabled)")
 	fs.StringVar(&tenantID, "tenant-id", "anonymous", "value for the X-Scope-OrgID header (Mimir tenant/org ID); omitted if empty")
 	fs.StringVar(&username, "username", "", "username for HTTP basic auth; omitted if empty")
@@ -94,6 +101,9 @@ func runSend(inPath string, from inputFormat, pbFmt pbFormat, url, target, tenan
 	}
 	if target == "mimir" && tenantID == "" {
 		log.Printf("omtool send: warning: -target=mimir without -tenant-id; this only works if Mimir multi-tenancy (auth) is disabled")
+	}
+	if url == "" {
+		url = defaultURLs[target]
 	}
 	if !dryRun && url == "" {
 		return fmt.Errorf("--url is required (unless --dry-run is set)")
