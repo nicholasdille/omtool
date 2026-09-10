@@ -26,12 +26,14 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Run GoReleaser
+      # Build artifacts without publishing so provenance can be generated
+      # for them before they are uploaded to the GitHub release.
+      - name: Run GoReleaser (build)
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean
+          args: release --clean --skip=publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -46,7 +48,16 @@ jobs:
             dist/*.zip
             dist/checksums.txt
 
-      - name: Attach provenance to the release
+      # Place the attestation bundle in dist/ so GoReleaser's own
+      # `release.extra_files` uploads it alongside the release assets.
+      - name: Stage provenance bundle for GoReleaser
+        run: cp "${{ steps.attest.outputs.bundle-path }}" dist/provenance.intoto.jsonl
+
+      - name: Run GoReleaser (publish)
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: publish --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.ref_name }}" "${{ steps.attest.outputs.bundle-path }}" --clobber

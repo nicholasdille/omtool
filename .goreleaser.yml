@@ -49,3 +49,5 @@ release:
   github:
     owner: nicholasdille
     name: omtool
+  extra_files:
+    - glob: ./dist/*.intoto.jsonl
