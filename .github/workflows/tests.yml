@@ -1,4 +1,4 @@
-name: static-analysis
+name: tests
 
 on:
   push:
@@ -27,6 +27,9 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
+
+      - name: go test
+        run: go test -cover ./...
 
   build-binaries:
     runs-on: ubuntu-latest
