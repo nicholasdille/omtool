@@ -74,7 +74,7 @@ func newSendCmd() *cobra.Command {
 	}
 
 	fs := cmd.Flags()
-	fs.StringVar(&inPath, "in", "-", `input file ("-" for stdin)`)
+	fs.StringVar(&inPath, "in", "", `input file ("-" for stdin)`)
 	fs.StringVar(&from, "from", string(inAuto), "input format: auto|openmetrics(om)|protobuf(pb)")
 	fs.StringVar(&pbFmtFl, "pb-format", string(pbBinary), "protobuf framing, for --from=protobuf: delimited|binary|text|json")
 	fs.StringVar(&url, "url", "", "remote-write endpoint URL; defaults to http://localhost:9090/api/v1/write for -target=prometheus or http://localhost:8080/api/v1/push for -target=mimir")
@@ -88,6 +88,7 @@ func newSendCmd() *cobra.Command {
 	fs.BoolVar(&insecureSkipVerify, "insecure-skip-verify", false, "skip TLS certificate verification")
 	fs.BoolVar(&dryRun, "dry-run", false, "build and report the payload but do not send it")
 	fs.Var(&extraHeaders, "header", `extra HTTP header "Key: Value" (repeatable)`)
+	cmd.MarkFlagRequired("in")
 
 	return cmd
 }

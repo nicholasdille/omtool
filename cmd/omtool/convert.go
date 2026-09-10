@@ -53,12 +53,13 @@ func newConvertCmd() *cobra.Command {
 	}
 
 	fs := cmd.Flags()
-	fs.StringVar(&inPath, "in", "-", `input file ("-" for stdin)`)
+	fs.StringVar(&inPath, "in", "", `input file ("-" for stdin)`)
 	fs.StringVar(&outPath, "out", "-", `output file ("-" for stdout)`)
 	fs.StringVar(&from, "from", string(inAuto), "input format: auto|openmetrics(om)|protobuf(pb)")
 	fs.StringVar(&to, "to", string(outHuman), "output format: openmetrics(om)|protobuf(pb)|human")
 	fs.StringVar(&pbFmtFl, "pb-format", string(pbBinary), "protobuf framing, for --from=protobuf and/or --to=protobuf: delimited|binary|text|json")
 	fs.BoolVar(&snappyFl, "snappy", false, "compress protobuf output with Snappy (only applies to --to=protobuf)")
+	cmd.MarkFlagRequired("in")
 
 	return cmd
 }
