@@ -87,7 +87,7 @@ func openInput(path string) (io.ReadCloser, error) {
 	if path == "-" || path == "" {
 		return io.NopCloser(os.Stdin), nil
 	}
-	return os.Open(path)
+	return os.Open(path) // #nosec G304 - file path is controlled by the user
 }
 
 // loadFamilies reads all of inPath (or stdin) and decodes it into
@@ -114,7 +114,7 @@ func openOutput(path string) (io.WriteCloser, error) {
 	if path == "-" || path == "" {
 		return nopWriteCloser{os.Stdout}, nil
 	}
-	return os.Create(path)
+	return os.Create(path) // #nosec G304 - file path is controlled by the user
 }
 
 type nopWriteCloser struct{ io.Writer }

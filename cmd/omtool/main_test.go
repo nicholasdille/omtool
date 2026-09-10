@@ -79,7 +79,7 @@ func TestOpenOutputFile(t *testing.T) {
 	if err := wc.Close(); err != nil {
 		t.Fatalf("Close: %v", err)
 	}
-	got, err := os.ReadFile(path)
+	got, err := os.ReadFile(path) // #nosec G304 - this is a test in a temp dir
 	if err != nil {
 		t.Fatalf("ReadFile: %v", err)
 	}

@@ -415,8 +415,8 @@ func parseFloat(s string) (float64, error) {
 
 func secondsToTimestamp(seconds float64) *timestamppb.Timestamp {
 	sec := int64(seconds)
-	nsec := int64((seconds - float64(sec)) * float64(time.Second))
-	return &timestamppb.Timestamp{Seconds: sec, Nanos: int32(nsec)}
+	nsec := int32((seconds - float64(sec)) * float64(time.Second))
+	return &timestamppb.Timestamp{Seconds: sec, Nanos: nsec}
 }
 
 // ---- protobuf decode ----

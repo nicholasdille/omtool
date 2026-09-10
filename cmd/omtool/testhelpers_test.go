@@ -10,7 +10,7 @@ func writeTempFile(path, content string) error {
 // readTempFile is a small test helper for reading files written by the
 // code under test.
 func readTempFile(path string) (string, error) {
-	b, err := os.ReadFile(path)
+	b, err := os.ReadFile(path) // #nosec G304 - this is a test in a temp dir
 	if err != nil {
 		return "", err
 	}
