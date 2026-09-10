@@ -17,7 +17,7 @@ jobs:
       attestations: write # publish the SLSA3 build provenance attestation
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0 # full history so goreleaser can build the changelog
 
