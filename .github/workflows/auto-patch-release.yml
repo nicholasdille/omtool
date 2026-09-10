@@ -1,0 +1,57 @@
+name: auto-patch-release
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  auto-patch-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the new tag
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history and tags
+
+      - name: Check commits since last release and tag a patch release
+        env:
+          BOT_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+        run: |
+          set -euo pipefail
+
+          last_tag="$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)"
+          if [ -z "$last_tag" ]; then
+            echo "No previous release tag found, nothing to do."
+            exit 0
+          fi
+          echo "Last release tag: $last_tag"
+
+          commits="$(git log "${last_tag}..HEAD" --format='%H')"
+          if [ -z "$commits" ]; then
+            echo "No commits since $last_tag, nothing to do."
+            exit 0
+          fi
+
+          non_bot_authors="$(git log "${last_tag}..HEAD" --format='%ae' | grep -v -F "$BOT_EMAIL" || true)"
+          if [ -n "$non_bot_authors" ]; then
+            echo "Commits since $last_tag include non-bot authors, skipping release."
+            exit 0
+          fi
+
+          echo "All commits since $last_tag are by the bot ($BOT_EMAIL)."
+
+          version="${last_tag#v}"
+          major="$(echo "$version" | cut -d. -f1)"
+          minor="$(echo "$version" | cut -d. -f2)"
+          patch="$(echo "$version" | cut -d. -f3)"
+          new_tag="v${major}.${minor}.$((patch + 1))"
+
+          echo "Creating new patch release tag: $new_tag"
+          git config user.name "github-actions[bot]"
+          git config user.email "$BOT_EMAIL"
+          git tag -a "$new_tag" -m "chore: Automated patch release $new_tag"
+          git push origin "$new_tag"
