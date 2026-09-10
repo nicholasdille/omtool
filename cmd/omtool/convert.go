@@ -59,7 +59,7 @@ func newConvertCmd() *cobra.Command {
 	fs.StringVar(&to, "to", string(outHuman), "output format: openmetrics(om)|protobuf(pb)|human")
 	fs.StringVar(&pbFmtFl, "pb-format", string(pbBinary), "protobuf framing, for --from=protobuf and/or --to=protobuf: delimited|binary|text|json")
 	fs.BoolVar(&snappyFl, "snappy", false, "compress protobuf output with Snappy (only applies to --to=protobuf)")
-	cmd.MarkFlagRequired("in")
+	_ = cmd.MarkFlagRequired("in")
 
 	return cmd
 }
@@ -74,7 +74,7 @@ func run(inPath, outPath string, from inputFormat, to outputFormat, pbFmt pbForm
 	if err != nil {
 		return fmt.Errorf("opening output: %w", err)
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	w := bufio.NewWriter(out)
 	switch to {

@@ -88,7 +88,7 @@ func newSendCmd() *cobra.Command {
 	fs.BoolVar(&insecureSkipVerify, "insecure-skip-verify", false, "skip TLS certificate verification")
 	fs.BoolVar(&dryRun, "dry-run", false, "build and report the payload but do not send it")
 	fs.Var(&extraHeaders, "header", `extra HTTP header "Key: Value" (repeatable)`)
-	cmd.MarkFlagRequired("in")
+	_ = cmd.MarkFlagRequired("in")
 
 	return cmd
 }
@@ -178,7 +178,7 @@ func sendRequest(url string, body []byte, tenantID, username, password, bearerTo
 	if err != nil {
 		return fmt.Errorf("sending request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 8192))
 	if resp.StatusCode/100 != 2 {

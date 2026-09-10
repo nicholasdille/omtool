@@ -100,7 +100,7 @@ func loadFamilies(inPath string, from inputFormat, pbFmt pbFormat) ([]*dto.Metri
 	if err != nil {
 		return nil, fmt.Errorf("opening input: %w", err)
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	data, err := io.ReadAll(in)
 	if err != nil {
