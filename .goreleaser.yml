@@ -34,6 +34,10 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+sboms:
+  - id: archive
+    artifacts: archive
+
 signs:
   - cmd: cosign
     signature: "${artifact}.sigstore.json"
