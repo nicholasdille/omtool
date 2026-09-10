@@ -72,7 +72,7 @@ func newSendCmd() *cobra.Command {
 	fs.StringVar(&pbFmtFl, "pb-format", string(pbBinary), "protobuf framing, for --from=protobuf: delimited|binary|text|json")
 	fs.StringVar(&url, "url", "", "remote-write endpoint URL, e.g. http://localhost:9090/api/v1/write (Prometheus) or http://localhost:8080/api/v1/push (Mimir)")
 	fs.StringVar(&target, "target", "prometheus", "target backend, used only to sanity-check flags: prometheus|mimir (Mimir requires -tenant-id unless multi-tenancy is disabled)")
-	fs.StringVar(&tenantID, "tenant-id", "fake", "value for the X-Scope-OrgID header (Mimir tenant/org ID); omitted if empty")
+	fs.StringVar(&tenantID, "tenant-id", "anonymous", "value for the X-Scope-OrgID header (Mimir tenant/org ID); omitted if empty")
 	fs.StringVar(&username, "username", "", "username for HTTP basic auth; omitted if empty")
 	fs.StringVar(&password, "password", "", "password for HTTP basic auth")
 	fs.StringVar(&bearerToken, "bearer-token", "", "bearer token for Authorization header; omitted if empty (overrides --username/--password)")
