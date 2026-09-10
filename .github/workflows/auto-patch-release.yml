@@ -20,6 +20,7 @@ jobs:
       - name: Check commits since last release and tag a patch release
         env:
           BOT_EMAIL: "41898282+github-actions[bot]@users.noreply.github.com"
+          RENOVATE_EMAIL: "29139614+renovate[bot]@users.noreply.github.com"
         run: |
           set -euo pipefail
 
@@ -36,13 +37,13 @@ jobs:
             exit 0
           fi
 
-          non_bot_authors="$(git log "${last_tag}..HEAD" --format='%ae' | grep -v -F "$BOT_EMAIL" || true)"
+          non_bot_authors="$(git log "${last_tag}..HEAD" --format='%ae' | grep -v -F -e "$BOT_EMAIL" -e "$RENOVATE_EMAIL" || true)"
           if [ -n "$non_bot_authors" ]; then
             echo "Commits since $last_tag include non-bot authors, skipping release."
             exit 0
           fi
 
-          echo "All commits since $last_tag are by the bot ($BOT_EMAIL)."
+          echo "All commits since $last_tag are by the bot ($BOT_EMAIL) or renovate ($RENOVATE_EMAIL)."
 
           version="${last_tag#v}"
           major="$(echo "$version" | cut -d. -f1)"
