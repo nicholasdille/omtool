@@ -26,8 +26,8 @@ go build -o omtool ./cmd/omtool
 
 All functionality lives under the `convert` subcommand. Flags:
 
-- `-in` — input file (`-` for stdin, default).
-- `-out` — output file (`-` for stdout, default).
+- `-in` — input file, required (use `-` for stdin).
+- `-out` — output file, required (use `-` for stdout).
 - `-from` — input format:
   - `auto` (default) — sniff the input: valid, control-byte-free UTF-8 is
     treated as OpenMetrics text; anything else as protobuf.
@@ -52,17 +52,17 @@ All functionality lives under the `convert` subcommand. Flags:
   - `text` — protobuf text format, families separated by a blank line.
   - `json` — one protobuf JSON object per line.
 
-Piping through stdin/stdout also works:
+Piping through stdin/stdout also works (pass `-` explicitly, since `-in`/`-out` are required):
 
 ```sh
 curl -s -H 'Accept: application/openmetrics-text' http://localhost:9100/metrics \
-  | ./omtool convert -to protobuf -pb-format delimited > metrics.pb
+  | ./omtool convert -in - -to protobuf -pb-format delimited -out metrics.pb
 ```
 
 Round-tripping OpenMetrics through protobuf back to human readable text:
 
 ```sh
-./omtool convert -in metrics.om -to protobuf | ./omtool convert -from protobuf -to human
+./omtool convert -in metrics.om -to protobuf -out - | ./omtool convert -in - -from protobuf -to human -out -
 ```
 
 ## Conversion notes
@@ -102,9 +102,11 @@ at-rest files), and `POST`s it with the standard remote-write headers.
 
 Flags:
 
-- `-in` — input file (`-` for stdin, default).
+- `-in` — input file, required (use `-` for stdin).
 - `-from` / `-pb-format` — same meaning as in `omtool convert`.
-- `-url` — remote-write endpoint URL (required unless `-dry-run`).
+- `-url` — remote-write endpoint URL; defaults to
+  `http://localhost:9090/api/v1/write` for `-target=prometheus` or
+  `http://localhost:8080/api/v1/push` for `-target=mimir`.
 - `-target` — `prometheus` (default) or `mimir`; only used to warn if
   `-tenant-id` is missing for Mimir.
 - `-tenant-id` — sets `X-Scope-OrgID` (Mimir tenant/org ID).

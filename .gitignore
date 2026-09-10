@@ -2,3 +2,4 @@
 *.pb
 *.test
 *.out
+dist/
