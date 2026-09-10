@@ -161,3 +161,41 @@ Flags for `omtool validate`:
 - `--in` — input file, required (use `-` for stdin).
 - `--quiet` — suppress the success summary; print nothing on success
   (useful for validation in scripts, where only the exit code matters).
+
+## Example
+
+Here is an example of a simple OpenMetrics file:
+
+```plaintext
+$ cat up.om
+# HELP up Whether a service is running
+# TYPE up gauge
+up{service="bar"} 1
+# EOF
+```
+
+This will validate the `up.om` file and print a summary of the metric families and series found. If the file is well-formed, the command will exit with a status code of `0`; otherwise, it will print the parse error and exit with a non-zero status code.
+
+```sh
+$ omtool validate --in up.om
+```
+
+To simulate errors in the validation, you can introduce small errors like removing the mandatory `# EOF` marker or removing the metrics name `up` from the `TYPE` line.
+
+Convert `up.om` to protobuf:
+
+```sh
+$ omtool convert --from om --in up.om --to protobuf --out up.pb
+```
+
+Use snappy compression on the protobuf output:
+
+```sh
+$ omtool convert --from om --in up.om --to protobuf --out up.pb --snappy
+```
+
+Send the protobuf file to a remote endpoint:
+
+```sh
+$ omtool send --in up.pb --target mimir
+```
