@@ -17,52 +17,69 @@ internal to `cmd/omtool`, with two subcommands:
 go build -o omtool ./cmd/omtool
 ```
 
+## Testing
+
+```sh
+go test ./...
+```
+
+To see test coverage:
+
+```sh
+go test -cover ./...
+```
+
 ## Usage
 
 ```sh
-./omtool convert -in metrics.om -to protobuf -pb-format delimited -out metrics.pb
-./omtool convert -in metrics.pb -from protobuf -to human
+./omtool convert --in metrics.om --to protobuf --pb-format delimited --out metrics.pb
+./omtool convert --in metrics.pb --from protobuf --to human
 ```
 
-All functionality lives under the `convert` subcommand. Flags:
+Flags for `omtool convert`:
 
-- `-in` — input file, required (use `-` for stdin).
-- `-out` — output file, required (use `-` for stdout).
-- `-from` — input format:
+- `--in` — input file, required (use `-` for stdin).
+- `--out` — output file (use `-` for stdout; default `-`).
+- `--from` — input format:
   - `auto` (default) — sniff the input: valid, control-byte-free UTF-8 is
     treated as OpenMetrics text; anything else as protobuf.
-  - `openmetrics` — OpenMetrics text exposition format.
-  - `protobuf` — protobuf `MetricFamily` messages, framed per `-pb-format`.
-    Snappy-framed (stream format) protobuf input is auto-detected by its
-    magic prefix and transparently decompressed before decoding, for both
-    `auto` and explicit `protobuf` input formats — no extra flag needed.
-- `-to` — output format:
-  - `openmetrics` — OpenMetrics text exposition format.
-  - `protobuf` — protobuf `MetricFamily` messages, framed per `-pb-format`.
+  - `openmetrics` (alias `om`) — OpenMetrics text exposition format.
+  - `protobuf` (alias `pb`) — protobuf `MetricFamily` messages, framed per
+    `--pb-format`. Snappy-framed (stream format) protobuf input is
+    auto-detected by its magic prefix and transparently decompressed
+    before decoding, for both `auto` and explicit `protobuf` input
+    formats — no extra flag needed.
+- `--to` — output format:
+  - `openmetrics` (alias `om`) — OpenMetrics text exposition format.
+  - `protobuf` (alias `pb`) — protobuf `MetricFamily` messages, framed per
+    `--pb-format`.
   - `human` (default) — indented plain text, one block per metric family,
     with labels and values (including histogram buckets and summary
     quantiles) spelled out.
-- `-pb-format` — protobuf framing, used whenever `-from=protobuf` and/or
-  `-to=protobuf`:
-  - `delimited` (default) — length-prefixed binary protobuf, the standard
+- `--pb-format` — protobuf framing, used whenever `--from=protobuf` and/or
+  `--to=protobuf`:
+  - `binary` (default) — a single, undelimited binary protobuf message.
+    Because concatenated undelimited messages have no boundary marker,
+    this only reliably supports **one** metric family; use `delimited`
+    for several.
+  - `delimited` — length-prefixed binary protobuf, the standard
     Prometheus `application/vnd.google.protobuf` scrape format.
-  - `binary` — a single, undelimited binary protobuf message. Because
-    concatenated undelimited messages have no boundary marker, this only
-    reliably supports **one** metric family; use `delimited` for several.
   - `text` — protobuf text format, families separated by a blank line.
   - `json` — one protobuf JSON object per line.
+- `--snappy` — compress protobuf output with Snappy (only applies to
+  `--to=protobuf`).
 
-Piping through stdin/stdout also works (pass `-` explicitly, since `-in`/`-out` are required):
+Piping through stdin/stdout also works (pass `-` explicitly, since `--in` is required):
 
 ```sh
 curl -s -H 'Accept: application/openmetrics-text' http://localhost:9100/metrics \
-  | ./omtool convert -in - -to protobuf -pb-format delimited -out metrics.pb
+  | ./omtool convert --in - --to protobuf --pb-format delimited --out metrics.pb
 ```
 
 Round-tripping OpenMetrics through protobuf back to human readable text:
 
 ```sh
-./omtool convert -in metrics.om -to protobuf -out - | ./omtool convert -in - -from protobuf -to human -out -
+./omtool convert --in metrics.om --to protobuf --out - | ./omtool convert --in - --from protobuf --to human --out -
 ```
 
 ## Conversion notes
@@ -82,7 +99,7 @@ Round-tripping OpenMetrics through protobuf back to human readable text:
 
 Sends a file (OpenMetrics text, or protobuf `MetricFamily` in any of
 `omtool convert`'s framings, Snappy-stream-compressed or not — same
-auto-detection as `omtool convert`'s `-from`/`-pb-format`) to a Prometheus
+auto-detection as `omtool convert`'s `--from`/`--pb-format`) to a Prometheus
 or Mimir remote-write endpoint. It converts every metric family into
 `prometheus.WriteRequest` `TimeSeries` (expanding histogram buckets and
 summary quantiles into their own `_bucket`/`le` and `quantile`-labelled
@@ -93,29 +110,32 @@ at-rest files), and `POST`s it with the standard remote-write headers.
 
 ```sh
 # Prometheus
-./omtool send -in metrics.om -url http://localhost:9090/api/v1/write
+./omtool send --in metrics.om --url http://localhost:9090/api/v1/write
 
 # Mimir (multi-tenant; X-Scope-OrgID is required unless auth is disabled)
-./omtool send -in metrics.pb -from protobuf -pb-format delimited \
-  -url http://localhost:8080/api/v1/push -target mimir -tenant-id my-tenant
+./omtool send --in metrics.pb --from protobuf --pb-format delimited \
+  --url http://localhost:8080/api/v1/push --target mimir --tenant-id my-tenant
 ```
 
-Flags:
+Flags for `omtool send`:
 
-- `-in` — input file, required (use `-` for stdin).
-- `-from` / `-pb-format` — same meaning as in `omtool convert`.
-- `-url` — remote-write endpoint URL; defaults to
-  `http://localhost:9090/api/v1/write` for `-target=prometheus` or
-  `http://localhost:8080/api/v1/push` for `-target=mimir`.
-- `-target` — `prometheus` (default) or `mimir`; only used to warn if
-  `-tenant-id` is missing for Mimir.
-- `-tenant-id` — sets `X-Scope-OrgID` (Mimir tenant/org ID).
-- `-username` / `-password` — HTTP basic auth.
-- `-bearer-token` — `Authorization: Bearer` token (overrides basic auth).
-- `-header` — extra `"Key: Value"` header, repeatable.
-- `-timeout` — HTTP request timeout (default `30s`).
-- `-insecure-skip-verify` — skip TLS certificate verification.
-- `-dry-run` — build and report the payload without sending it.
+- `--in` — input file, required (use `-` for stdin).
+- `--from` / `--pb-format` — same meaning as in `omtool convert`.
+- `--url` — remote-write endpoint URL; defaults to
+  `http://localhost:9090/api/v1/write` for `--target=prometheus` or
+  `http://localhost:8080/api/v1/push` for `--target=mimir`.
+- `--target` — `prometheus` (default) or `mimir`; only used to warn if
+  `--tenant-id` is missing for Mimir.
+- `--tenant-id` — sets `X-Scope-OrgID` (Mimir tenant/org ID); defaults to
+  `anonymous`, omitted from the request entirely if set to `""`.
+- `--username` / `--password` — HTTP basic auth.
+- `--bearer-token` — `Authorization: Bearer` token (overrides basic auth).
+- `--user-agent` — value for the `User-Agent` header (default
+  `omtool-send/1.0`).
+- `--header` — extra `"Key: Value"` header, repeatable.
+- `--timeout` — HTTP request timeout (default `30s`).
+- `--insecure-skip-verify` — skip TLS certificate verification.
+- `--dry-run` — build and report the payload without sending it.
 
 Samples without an explicit timestamp (e.g. plain OpenMetrics samples) are
 stamped with the current time at send time.
