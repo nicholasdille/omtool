@@ -3,9 +3,9 @@ name: tests
 on:
   push:
     paths:
-      - 'cmd/**/*.go'
+      - '**/*.go'
     tags-ignore:
-      - '**'
+      - 'v*'
 
 permissions:
   contents: read
