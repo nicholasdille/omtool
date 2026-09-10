@@ -35,7 +35,7 @@ jobs:
       # Build artifacts without publishing so provenance can be generated
       # for them before they are uploaded to the GitHub release.
       - name: Run GoReleaser (build)
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: "~> v2"
@@ -60,7 +60,7 @@ jobs:
         run: cp "${{ steps.attest.outputs.bundle-path }}" dist/provenance.intoto.jsonl
 
       - name: Run GoReleaser (publish)
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: "~> v2"
