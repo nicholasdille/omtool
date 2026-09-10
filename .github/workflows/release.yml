@@ -47,7 +47,7 @@ jobs:
       # via Sigstore using the workflow's OIDC identity.
       - name: Generate SLSA3 build provenance
         id: attest
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/*.tar.gz
