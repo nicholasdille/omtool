@@ -40,7 +40,7 @@ func newRootCmd() *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(newConvertCmd(), newSendCmd())
+	root.AddCommand(newConvertCmd(), newSendCmd(), newValidateCmd())
 	return root
 }
 

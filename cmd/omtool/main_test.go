@@ -16,8 +16,8 @@ func TestNewRootCmdWiring(t *testing.T) {
 	for _, c := range root.Commands() {
 		names[c.Name()] = true
 	}
-	if !names["convert"] || !names["send"] {
-		t.Errorf("expected convert and send subcommands, got %v", names)
+	if !names["convert"] || !names["send"] || !names["validate"] {
+		t.Errorf("expected convert, send and validate subcommands, got %v", names)
 	}
 }
 

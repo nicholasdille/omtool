@@ -1,7 +1,7 @@
 # omtool
 
 A single Go CLI, built around one shared OpenMetrics/protobuf parser
-internal to `cmd/omtool`, with two subcommands:
+internal to `cmd/omtool`, with three subcommands:
 
 - **omtool convert** converts between [OpenMetrics](https://openmetrics.io/)
   text exposition format and Prometheus protobuf `MetricFamily` messages
@@ -10,6 +10,8 @@ internal to `cmd/omtool`, with two subcommands:
 - **omtool send** sends metrics from a file to a Prometheus- or
   Mimir-compatible remote-write endpoint, as a Snappy-compressed protobuf
   `WriteRequest`.
+- **omtool validate** checks that an input file is well-formed
+  [OpenMetrics](https://openmetrics.io/) text exposition format.
 
 ## Build
 
@@ -139,3 +141,23 @@ Flags for `omtool send`:
 
 Samples without an explicit timestamp (e.g. plain OpenMetrics samples) are
 stamped with the current time at send time.
+
+## omtool validate
+
+Checks that an input file is well-formed
+[OpenMetrics](https://openmetrics.io/) text exposition format, using the
+same strict parser as `omtool convert`/`omtool send` (which enforces the
+format's rules, including the mandatory trailing `# EOF` marker). On
+success it prints a one-line summary of how many metric families and
+series were found and exits `0`; on failure it prints the parse error to
+stderr and exits non-zero.
+
+```sh
+./omtool validate --in metrics.om
+```
+
+Flags for `omtool validate`:
+
+- `--in` — input file, required (use `-` for stdin).
+- `--quiet` — suppress the success summary; print nothing on success
+  (useful for validation in scripts, where only the exit code matters).
