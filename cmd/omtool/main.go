@@ -17,44 +17,27 @@ import (
 	"os"
 
 	dto "github.com/prometheus/client_model/go"
+	"github.com/spf13/cobra"
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		usage()
-		os.Exit(2)
-	}
-
-	cmd := os.Args[1]
-	args := os.Args[2:]
-
-	switch cmd {
-	case "convert":
-		runConvertCmd(args)
-	case "send":
-		runSendCmd(args)
-	case "-h", "--help", "help":
-		usage()
-	default:
-		fmt.Fprintf(os.Stderr, "omtool: unknown command %q\n\n", cmd)
-		usage()
-		os.Exit(2)
+	if err := newRootCmd().Execute(); err != nil {
+		os.Exit(1)
 	}
 }
 
-func usage() {
-	fmt.Fprintln(os.Stderr, `omtool converts Prometheus/OpenMetrics metric data between formats.
-
-Usage:
-
-	omtool <command> [arguments]
-
-Commands:
-
-	convert    convert metric data between OpenMetrics, protobuf and human readable formats
-	send       send metric data to a Prometheus/Mimir remote-write endpoint
-
-Use "omtool convert -h" or "omtool send -h" for details on each command's flags.`)
+// newRootCmd builds omtool's root command and wires up its "convert" and
+// "send" subcommands.
+func newRootCmd() *cobra.Command {
+	root := &cobra.Command{
+		Use:           "omtool",
+		Short:         "Convert and send Prometheus/OpenMetrics metric data",
+		Long:          `omtool converts Prometheus/OpenMetrics metric data between formats.`,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+	}
+	root.AddCommand(newConvertCmd(), newSendCmd())
+	return root
 }
 
 func openInput(path string) (io.ReadCloser, error) {

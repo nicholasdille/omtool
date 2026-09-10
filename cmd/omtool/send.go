@@ -13,7 +13,6 @@ package main
 import (
 	"bytes"
 	"crypto/tls"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -23,6 +22,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
+	"github.com/spf13/cobra"
 )
 
 // remoteWriteVersion is the value of the mandatory
@@ -37,13 +37,11 @@ func (h *headerList) Set(v string) error {
 	*h = append(*h, v)
 	return nil
 }
+func (h *headerList) Type() string { return "stringArray" }
 
-// runSendCmd implements the "send" subcommand: it parses its own flag set
-// from args and ships the converted metric data to a remote-write
-// endpoint.
-func runSendCmd(args []string) {
-	fs := flag.NewFlagSet("send", flag.ExitOnError)
-
+// newSendCmd builds the "send" subcommand: it ships converted metric data
+// to a remote-write endpoint.
+func newSendCmd() *cobra.Command {
 	var (
 		inPath, from, pbFmtFl string
 		url, target           string
@@ -56,25 +54,35 @@ func runSendCmd(args []string) {
 		dryRun                bool
 		extraHeaders          headerList
 	)
+
+	cmd := &cobra.Command{
+		Use:   "send",
+		Short: "Send metric data to a Prometheus/Mimir remote-write endpoint",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := runSend(inPath, inputFormat(normalizeFormatAlias(from)), pbFormat(pbFmtFl), url, target, tenantID, username, password, bearerToken, userAgent, timeout, insecureSkipVerify, dryRun, extraHeaders); err != nil {
+				return fmt.Errorf("omtool send: %w", err)
+			}
+			return nil
+		},
+	}
+
+	fs := cmd.Flags()
 	fs.StringVar(&inPath, "in", "-", `input file ("-" for stdin)`)
 	fs.StringVar(&from, "from", string(inAuto), "input format: auto|openmetrics(om)|protobuf(pb)")
-	fs.StringVar(&pbFmtFl, "pb-format", string(pbBinary), "protobuf framing, for -from=protobuf: delimited|binary|text|json")
+	fs.StringVar(&pbFmtFl, "pb-format", string(pbBinary), "protobuf framing, for --from=protobuf: delimited|binary|text|json")
 	fs.StringVar(&url, "url", "", "remote-write endpoint URL, e.g. http://localhost:9090/api/v1/write (Prometheus) or http://localhost:8080/api/v1/push (Mimir)")
 	fs.StringVar(&target, "target", "prometheus", "target backend, used only to sanity-check flags: prometheus|mimir (Mimir requires -tenant-id unless multi-tenancy is disabled)")
 	fs.StringVar(&tenantID, "tenant-id", "fake", "value for the X-Scope-OrgID header (Mimir tenant/org ID); omitted if empty")
 	fs.StringVar(&username, "username", "", "username for HTTP basic auth; omitted if empty")
 	fs.StringVar(&password, "password", "", "password for HTTP basic auth")
-	fs.StringVar(&bearerToken, "bearer-token", "", "bearer token for Authorization header; omitted if empty (overrides -username/-password)")
+	fs.StringVar(&bearerToken, "bearer-token", "", "bearer token for Authorization header; omitted if empty (overrides --username/--password)")
 	fs.StringVar(&userAgent, "user-agent", "omtool-send/1.0", "value for the User-Agent header")
 	fs.DurationVar(&timeout, "timeout", 30*time.Second, "HTTP request timeout")
 	fs.BoolVar(&insecureSkipVerify, "insecure-skip-verify", false, "skip TLS certificate verification")
 	fs.BoolVar(&dryRun, "dry-run", false, "build and report the payload but do not send it")
 	fs.Var(&extraHeaders, "header", `extra HTTP header "Key: Value" (repeatable)`)
-	fs.Parse(args)
 
-	if err := runSend(inPath, inputFormat(normalizeFormatAlias(from)), pbFormat(pbFmtFl), url, target, tenantID, username, password, bearerToken, userAgent, timeout, insecureSkipVerify, dryRun, extraHeaders); err != nil {
-		log.Fatalf("omtool send: %v", err)
-	}
+	return cmd
 }
 
 func runSend(inPath string, from inputFormat, pbFmt pbFormat, url, target, tenantID, username, password, bearerToken, userAgent string, timeout time.Duration, insecureSkipVerify, dryRun bool, extraHeaders headerList) error {
@@ -88,7 +96,7 @@ func runSend(inPath string, from inputFormat, pbFmt pbFormat, url, target, tenan
 		log.Printf("omtool send: warning: -target=mimir without -tenant-id; this only works if Mimir multi-tenancy (auth) is disabled")
 	}
 	if !dryRun && url == "" {
-		return fmt.Errorf("-url is required (unless -dry-run is set)")
+		return fmt.Errorf("--url is required (unless --dry-run is set)")
 	}
 
 	families, err := loadFamilies(inPath, from, pbFmt)

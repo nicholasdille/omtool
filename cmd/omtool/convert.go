@@ -6,10 +6,8 @@ package main
 
 import (
 	"bufio"
-	"flag"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"sort"
 	"strconv"
@@ -19,6 +17,7 @@ import (
 	"github.com/golang/snappy"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
@@ -33,27 +32,35 @@ const (
 	outHuman       outputFormat = "human"       // human readable, indented plain text
 )
 
-// runConvertCmd implements the "convert" subcommand: it parses its own
-// flag set from args and performs the format conversion.
-func runConvertCmd(args []string) {
-	fs := flag.NewFlagSet("convert", flag.ExitOnError)
-
+// newConvertCmd builds the "convert" subcommand: it converts metric data
+// between OpenMetrics, protobuf and human readable formats.
+func newConvertCmd() *cobra.Command {
 	var (
 		inPath, outPath   string
 		from, to, pbFmtFl string
 		snappyFl          bool
 	)
+
+	cmd := &cobra.Command{
+		Use:   "convert",
+		Short: "Convert metric data between OpenMetrics, protobuf and human readable formats",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := run(inPath, outPath, inputFormat(normalizeFormatAlias(from)), outputFormat(normalizeFormatAlias(to)), pbFormat(pbFmtFl), snappyFl); err != nil {
+				return fmt.Errorf("omtool convert: %w", err)
+			}
+			return nil
+		},
+	}
+
+	fs := cmd.Flags()
 	fs.StringVar(&inPath, "in", "-", `input file ("-" for stdin)`)
 	fs.StringVar(&outPath, "out", "-", `output file ("-" for stdout)`)
 	fs.StringVar(&from, "from", string(inAuto), "input format: auto|openmetrics(om)|protobuf(pb)")
 	fs.StringVar(&to, "to", string(outHuman), "output format: openmetrics(om)|protobuf(pb)|human")
-	fs.StringVar(&pbFmtFl, "pb-format", string(pbBinary), "protobuf framing, for -from=protobuf and/or -to=protobuf: delimited|binary|text|json")
-	fs.BoolVar(&snappyFl, "snappy", false, "compress protobuf output with Snappy (only applies to -to=protobuf)")
-	fs.Parse(args)
+	fs.StringVar(&pbFmtFl, "pb-format", string(pbBinary), "protobuf framing, for --from=protobuf and/or --to=protobuf: delimited|binary|text|json")
+	fs.BoolVar(&snappyFl, "snappy", false, "compress protobuf output with Snappy (only applies to --to=protobuf)")
 
-	if err := run(inPath, outPath, inputFormat(normalizeFormatAlias(from)), outputFormat(normalizeFormatAlias(to)), pbFormat(pbFmtFl), snappyFl); err != nil {
-		log.Fatalf("omtool convert: %v", err)
-	}
+	return cmd
 }
 
 func run(inPath, outPath string, from inputFormat, to outputFormat, pbFmt pbFormat, snappyCompress bool) error {
