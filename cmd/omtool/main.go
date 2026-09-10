@@ -15,6 +15,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime/debug"
+	"strings"
 
 	dto "github.com/prometheus/client_model/go"
 	"github.com/spf13/cobra"
@@ -34,11 +36,51 @@ func newRootCmd() *cobra.Command {
 		Use:           "omtool",
 		Short:         "Convert and send Prometheus/OpenMetrics metric data",
 		Long:          `omtool converts Prometheus/OpenMetrics metric data between formats.`,
+		Version:       buildVersion(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
 	root.AddCommand(newConvertCmd(), newSendCmd())
 	return root
+}
+
+// buildVersion derives a version string from the Go module's embedded
+// build info (populated by `go build`/`go install` from the module
+// version and VCS metadata), so `omtool --version` reports something
+// useful without requiring ldflags at build time.
+func buildVersion() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "unknown"
+	}
+
+	version := info.Main.Version
+	if version != "" && version != "(devel)" {
+		// Go already stamps this with VCS info (e.g. a pseudo-version
+		// plus a "+dirty" suffix) when built in module mode, so it's
+		// usable as-is.
+		return version
+	}
+
+	var revision, dirty string
+	for _, s := range info.Settings {
+		switch s.Key {
+		case "vcs.revision":
+			revision = s.Value
+			if len(revision) > 12 {
+				revision = revision[:12]
+			}
+		case "vcs.modified":
+			if s.Value == "true" {
+				dirty = "-dirty"
+			}
+		}
+	}
+
+	if revision == "" {
+		return "devel"
+	}
+	return strings.Join([]string{"devel", revision + dirty}, "+")
 }
 
 func openInput(path string) (io.ReadCloser, error) {
