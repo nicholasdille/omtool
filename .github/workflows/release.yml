@@ -26,6 +26,9 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
       # Build artifacts without publishing so provenance can be generated
       # for them before they are uploaded to the GitHub release.
       - name: Run GoReleaser (build)
