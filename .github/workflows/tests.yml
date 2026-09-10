@@ -2,6 +2,8 @@ name: tests
 
 on:
   push:
+    paths:
+      - 'cmd/**/*.go'
     tags-ignore:
       - '**'
 
