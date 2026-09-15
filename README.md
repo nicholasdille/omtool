@@ -1,7 +1,7 @@
 # omtool
 
 A single Go CLI, built around one shared OpenMetrics/protobuf parser
-internal to `cmd/omtool`, with three subcommands:
+internal to `cmd/omtool`, with four subcommands:
 
 - **omtool convert** converts between [OpenMetrics](https://openmetrics.io/)
   text exposition format and Prometheus protobuf `MetricFamily` messages
@@ -12,6 +12,9 @@ internal to `cmd/omtool`, with three subcommands:
   `WriteRequest`.
 - **omtool validate** checks that an input file is well-formed
   [OpenMetrics](https://openmetrics.io/) text exposition format.
+- **omtool tsdb create** converts OpenMetrics text or Prometheus protobuf
+  `MetricFamily` messages into Prometheus TSDB blocks.
+- **omtool tsdb backfill** uploads a TSDB block to Mimir.
 
 ## Build
 
@@ -161,6 +164,52 @@ Flags for `omtool validate`:
 - `--in` — input file, required (use `-` for stdin).
 - `--quiet` — suppress the success summary; print nothing on success
   (useful for validation in scripts, where only the exit code matters).
+
+## omtool tsdb create
+
+Converts OpenMetrics text or protobuf metric families into a Prometheus TSDB
+block directory. Samples without an explicit timestamp use the current time.
+Classic histogram buckets and summary quantiles are expanded into their
+standard series before being written.
+
+```sh
+./omtool tsdb create --in metrics.om --out data/blocks
+./omtool tsdb create --in metrics.pb --from protobuf --pb-format delimited --out data/blocks
+```
+
+Flags for `omtool tsdb create`:
+
+- `--in` — input file, required (use `-` for stdin).
+- `--out` — output directory for TSDB blocks, required.
+- `--from` / `--pb-format` — same meaning as in `omtool convert`.
+- `--block-duration` — TSDB block duration (default `2h`).
+
+## omtool tsdb backfill
+
+Uploads one Prometheus TSDB block directory to Mimir's experimental block
+upload API. The Mimir compactor must have TSDB block upload enabled.
+
+```sh
+./omtool tsdb backfill --in data/blocks/01J... --url http://localhost:8080 \
+  --tenant-id my-tenant
+```
+
+The command uploads `index` and all files under `chunks/`, then waits for
+Mimir to validate the block.
+
+Flags for `omtool tsdb backfill`:
+
+- `--in` — TSDB block directory, required.
+- `--url` — Mimir base URL (default `http://localhost:8080`).
+- `--tenant-id` — value for `X-Scope-OrgID` (default `anonymous`; omitted if
+  empty).
+- `--username` / `--password` — HTTP basic auth.
+- `--bearer-token` — bearer token, overriding basic auth.
+- `--timeout` — HTTP request timeout (default `30s`).
+- `--poll-interval` — delay between validation checks (default `5s`).
+- `--header` — extra `"Key: Value"` header, repeatable.
+- `--insecure-skip-verify` — skip TLS certificate verification.
+- `--dry-run` — validate the block and report the upload without sending it.
 
 ## Example
 

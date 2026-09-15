@@ -29,18 +29,17 @@ func main() {
 	}
 }
 
-// newRootCmd builds omtool's root command and wires up its "convert" and
-// "send" subcommands.
+// newRootCmd builds omtool's root command and wires up its subcommands.
 func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "omtool",
-		Short:         "Convert and send Prometheus/OpenMetrics metric data",
-		Long:          `omtool converts Prometheus/OpenMetrics metric data between formats.`,
+		Short:         "Convert, send, and store Prometheus/OpenMetrics metric data",
+		Long:          `omtool converts Prometheus/OpenMetrics metric data between formats and TSDB blocks.`,
 		Version:       buildVersion(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(newConvertCmd(), newSendCmd(), newValidateCmd())
+	root.AddCommand(newConvertCmd(), newSendCmd(), newValidateCmd(), newTSDBCmd())
 	return root
 }
 
