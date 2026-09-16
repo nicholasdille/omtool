@@ -22,7 +22,7 @@ func TestRunTSDBOpenMetrics(t *testing.T) {
 	if err := os.WriteFile(input, []byte("# TYPE requests_total counter\nrequests_total{method=\"GET\"} 3 1700000000000\n# EOF\n"), 0o600); err != nil {
 		t.Fatalf("WriteFile: %v", err)
 	}
-	if err := os.Mkdir(output, 0o755); err != nil {
+	if err := os.Mkdir(output, 0o700); err != nil {
 		t.Fatalf("Mkdir: %v", err)
 	}
 	if err := runTSDB(input, output, inOpenMetrics, pbBinary, time.Hour); err != nil {
