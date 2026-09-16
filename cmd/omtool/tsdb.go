@@ -221,9 +221,9 @@ func runTSDBBackfill(blockPath, endpoint, tenantID, username, password, bearerTo
 		case "complete":
 			return nil
 		case "failed":
-			return fmt.Errorf("Mimir rejected block: %s", result.Error)
+			return fmt.Errorf("mimir rejected block: %s", result.Error)
 		case "":
-			return fmt.Errorf("Mimir returned an empty block upload status")
+			return fmt.Errorf("mimir returned an empty block upload status")
 		}
 		if pollInterval > 0 {
 			time.Sleep(pollInterval)
@@ -274,7 +274,7 @@ func tsdbHTTP(client *http.Client, method, requestURL string, body []byte, heade
 	defer func() { _ = resp.Body.Close() }()
 	responseBody, _ := io.ReadAll(io.LimitReader(resp.Body, 8192))
 	if resp.StatusCode/100 != 2 {
-		return nil, fmt.Errorf("Mimir returned %s: %s", resp.Status, strings.TrimSpace(string(responseBody)))
+		return nil, fmt.Errorf("mimir returned %s: %s", resp.Status, strings.TrimSpace(string(responseBody)))
 	}
 	return responseBody, nil
 }
@@ -295,8 +295,12 @@ func runTSDB(inPath, outPath string, from inputFormat, pbFmt pbFormat, blockDura
 	if len(request.Timeseries) == 0 {
 		return fmt.Errorf("input contains no time series")
 	}
-	if err := os.MkdirAll(outPath, 0o755); err != nil {
-		return fmt.Errorf("creating output directory: %w", err)
+	info, err := os.Stat(outPath)
+	if err != nil {
+		return fmt.Errorf("failed to stat output directory: %w", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("output path %s is not a directory", outPath)
 	}
 	writer, err := tsdb.NewBlockWriter(promslog.NewNopLogger(), outPath, blockRange)
 	if err != nil {

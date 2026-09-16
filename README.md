@@ -180,7 +180,8 @@ standard series before being written.
 Flags for `omtool tsdb create`:
 
 - `--in` — input file, required (use `-` for stdin).
-- `--out` — output directory for TSDB blocks, required.
+- `--out` — output directory for TSDB blocks, required; the directory must
+  already exist.
 - `--from` / `--pb-format` — same meaning as in `omtool convert`.
 - `--block-duration` — TSDB block duration (default `2h`).
 
