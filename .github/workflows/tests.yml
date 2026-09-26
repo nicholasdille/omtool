@@ -1,7 +1,11 @@
 name: tests
 
 on:
-  push: {}
+  push:
+    paths:
+    - "cmd/omtool/*.go"
+    - "go.*"
+    - ".golangci.yaml"
   workflow_run:
     workflows: ["update-deps"]
     types:
