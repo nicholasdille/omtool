@@ -12,6 +12,7 @@ on:
     workflows: ["update-deps"]
     types:
     - completed
+  workflow_call: {}
 
 permissions:
   contents: read
