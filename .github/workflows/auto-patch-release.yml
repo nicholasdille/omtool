@@ -32,20 +32,20 @@ jobs:
           last_tag="$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)"
           if [ -z "$last_tag" ]; then
             echo "No previous release tag found, nothing to do."
-            exit 0
+            exit 1
           fi
           echo "Last release tag: $last_tag"
 
           commits="$(git log "${last_tag}..HEAD" --format='%H')"
           if [ -z "$commits" ]; then
             echo "No commits since $last_tag, nothing to do."
-            exit 0
+            exit 1
           fi
 
           non_bot_authors="$(git log "${last_tag}..HEAD" --format='%ae' | grep -v -F -e "$BOT_EMAIL" -e "$RENOVATE_EMAIL" || true)"
           if [ -n "$non_bot_authors" ]; then
             echo "Commits since $last_tag include non-bot authors, skipping release."
-            exit 0
+            exit 1
           fi
 
           echo "All commits since $last_tag are by the bot ($BOT_EMAIL) or renovate ($RENOVATE_EMAIL)."

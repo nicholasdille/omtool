@@ -31,7 +31,7 @@ jobs:
         run: |
           if git diff --quiet -- go.mod go.sum; then
             echo "No dependency changes to commit."
-            exit 0
+            exit 1
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
