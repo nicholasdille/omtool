@@ -106,9 +106,6 @@ func runSend(inPath string, from inputFormat, pbFmt pbFormat, url, target, tenan
 	if url == "" {
 		url = defaultURLs[target]
 	}
-	if !dryRun && url == "" {
-		return fmt.Errorf("--url is required (unless --dry-run is set)")
-	}
 
 	families, err := loadFamilies(inPath, from, pbFmt)
 	if err != nil {

@@ -125,7 +125,7 @@ func TestRunTSDBSend(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
-	if err := runTSDBBackfill(blockDir, server.URL, "tenant", "", "", "", "test", time.Second, 0, false, false, nil); err != nil {
+	if err := runTSDBBackfill(blockDir, server.URL, "tenant", "", "", "", "test", time.Second, time.Millisecond, false, false, nil); err != nil {
 		t.Fatalf("runTSDBBackfill: %v", err)
 	}
 	if len(requests) != 5 {
@@ -219,16 +219,19 @@ func TestRunTSDBSendValidationAndStates(t *testing.T) {
 				}
 			}))
 			defer server.Close()
-			if err := runTSDBBackfill(blockDir, server.URL, "", "", "", "", "", time.Second, 0, false, false, nil); err == nil {
+			if err := runTSDBBackfill(blockDir, server.URL, "", "", "", "", "", time.Second, time.Millisecond, false, false, nil); err == nil {
 				t.Fatal("expected upload status error")
 			}
 		})
 	}
-	if err := runTSDBBackfill(blockDir, "", "", "", "", "", "", time.Second, 0, false, false, nil); err == nil {
+	if err := runTSDBBackfill(blockDir, "", "", "", "", "", "", time.Second, time.Millisecond, false, false, nil); err == nil {
 		t.Fatal("expected missing URL error")
 	}
 	if err := runTSDBBackfill(blockDir, "http://localhost", "", "", "", "", "", time.Second, -time.Second, false, true, nil); err == nil {
 		t.Fatal("expected negative poll interval error")
+	}
+	if err := runTSDBBackfill(blockDir, "http://localhost", "", "", "", "", "", time.Second, 0, false, true, nil); err == nil {
+		t.Fatal("expected zero poll interval error")
 	}
 }
 
@@ -242,7 +245,7 @@ func TestRunTSDBSendRequestFailuresAndPending(t *testing.T) {
 				}
 			}))
 			defer server.Close()
-			if err := runTSDBBackfill(blockDir, server.URL, "", "", "", "", "", time.Second, 0, false, false, nil); err == nil {
+			if err := runTSDBBackfill(blockDir, server.URL, "", "", "", "", "", time.Second, time.Millisecond, false, false, nil); err == nil {
 				t.Fatal("expected request failure")
 			}
 		})

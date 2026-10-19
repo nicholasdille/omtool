@@ -9,6 +9,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -171,6 +173,39 @@ func parseOpenMetrics(data []byte) ([]*dto.MetricFamily, error) {
 	}
 	return result, nil
 }
+
+// protobufTextHint returns guidance for the common --from=auto mistake of
+// feeding plain-text protobuf (text or JSON framing) in without an explicit
+// --from=protobuf: the sniffing has to treat readable text as OpenMetrics,
+// so such input fails with an OpenMetrics parse error instead. It returns
+// "" when the input does not look like plain-text protobuf. Any valid
+// OpenMetrics input starts with a comment line ("# ..."), a sample line with
+// a label block followed by a value ("name{...} 3"), or blank lines, so the
+// patterns below ("{..." or "identifier:") cannot match it.
+func protobufTextHint(data []byte) string {
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		if strings.HasPrefix(line, "{") {
+			return "input looks like protobuf JSON: rerun with --from=protobuf --pb-format=json"
+		}
+		if protoTextKeyRe.MatchString(line) {
+			return "input looks like protobuf text format: rerun with --from=protobuf --pb-format=text"
+		}
+		return ""
+	}
+	return ""
+}
+
+// protoTextKeyRe matches a leading protobuf text-format MetricFamily field
+// ("name", "help", "type", "metric" or "unit") declaration such as
+// `name: "..."` or `metric {`, which is how MetricFamily messages from
+// "omtool convert -to pb-format text" begin. Only the separator (":", "{")
+// is accepted so that a valid OpenMetrics sample line for a metric named
+// e.g. "type" ("type 3") cannot false-match.
+var protoTextKeyRe = regexp.MustCompile(`^(?:name|help|type|metric|unit)\s*[:{]`)
 
 func toProtoType(t model.MetricType) dto.MetricType {
 	switch t {
@@ -413,10 +448,20 @@ func parseFloat(s string) (float64, error) {
 	return strconv.ParseFloat(s, 64)
 }
 
+// secondsToTimestamp converts a fractional-seconds value (as parsed from an
+// OpenMetrics "_created" sample) into a Timestamp. The floor-divided normal
+// form keeps Nanos in [0, 1e9): truncation alone would produce a negative
+// Nanos for negative input, which timestamppb rejects as an invalid proto
+// message.
 func secondsToTimestamp(seconds float64) *timestamppb.Timestamp {
-	sec := int64(seconds)
-	nsec := int32((seconds - float64(sec)) * float64(time.Second))
-	return &timestamppb.Timestamp{Seconds: sec, Nanos: nsec}
+	totalNs := int64(math.Round(seconds * float64(time.Second)))
+	sec := totalNs / int64(time.Second)
+	nsec := totalNs % int64(time.Second)
+	if nsec < 0 {
+		sec--
+		nsec += int64(time.Second)
+	}
+	return &timestamppb.Timestamp{Seconds: sec, Nanos: int32(nsec)}
 }
 
 // ---- protobuf decode ----
@@ -549,13 +594,19 @@ func decodeJSON(data []byte) ([]*dto.MetricFamily, error) {
 // the given input format (resolving inAuto via detectFormat first) and
 // protobuf framing (used only when the resolved format is inProtobuf).
 func readFamilies(data []byte, from inputFormat, pbFmt pbFormat) ([]*dto.MetricFamily, error) {
-	if from == inAuto {
+	autoDetected := from == inAuto
+	if autoDetected {
 		from = detectFormat(data)
 	}
 	switch from {
 	case inOpenMetrics:
 		families, err := parseOpenMetrics(data)
 		if err != nil {
+			if autoDetected {
+				if hint := protobufTextHint(data); hint != "" {
+					return nil, fmt.Errorf("parsing OpenMetrics input: %w\n%s", err, hint)
+				}
+			}
 			return nil, fmt.Errorf("parsing OpenMetrics input: %w", err)
 		}
 		return families, nil

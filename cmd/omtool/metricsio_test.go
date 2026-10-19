@@ -416,6 +416,75 @@ func TestReadFamiliesOpenMetricsError(t *testing.T) {
 	}
 }
 
+func TestReadFamiliesProtobufTextHintOnAutoParseFailure(t *testing.T) {
+	tests := []struct {
+		name, input, hint string
+	}{
+		{
+			name:  "pb text",
+			input: "name: \"foo\"\nhelp: \"a metric\"\n\n",
+			hint:  "--pb-format=text",
+		},
+		{
+			name:  "pb multiline json",
+			input: "{\n  \"name\": \"foo\"\n}\n",
+			hint:  "--pb-format=json",
+		},
+		{
+			name:  "plain junk gets no hint",
+			input: "not valid openmetrics {{{",
+			hint:  "",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := readFamilies([]byte(test.input), inAuto, pbBinary)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if got := err.Error(); strings.Contains(got, "--pb-format") != (test.hint != "") {
+				t.Errorf("error %q does not match expected hint %q", got, test.hint)
+			}
+		})
+	}
+}
+
+// TestReadFamiliesProtobufTextHintExplicitFrom checks that an explicit
+// --from=openmetrics error message is left untouched (no hint).
+func TestReadFamiliesProtobufTextHintExplicitFrom(t *testing.T) {
+	_, err := readFamilies([]byte("name: \"foo\"\n"), inOpenMetrics, pbBinary)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if strings.Contains(err.Error(), "--pb-format") {
+		t.Errorf("explicit --from error should not contain a hint, got %q", err)
+	}
+}
+
+func TestSecondsToTimestamp(t *testing.T) {
+	tests := []struct {
+		seconds float64
+		wantSec int64
+		wantNs  int32
+	}{
+		{0, 0, 0},
+		{1.5, 1, 5e8},
+		{1712345678.901, 1712345678, 900999936}, // .901 isn't exactly representable as a float64
+		{-1.5, -2, 5e8},                         // floor semantics: -2s + 0.5s = -1.5s
+		{-0.001, -1, 999e6},                     // -1s + 0.999s = -0.001s
+	}
+	for _, test := range tests {
+		got := secondsToTimestamp(test.seconds)
+		if got.GetSeconds() != test.wantSec || got.GetNanos() != test.wantNs {
+			t.Errorf("secondsToTimestamp(%v) = %v, want {%d, %d}", test.seconds, got, test.wantSec, test.wantNs)
+		}
+		// timestamppb rejects negative nanos (and over-range seconds).
+		if err := got.CheckValid(); err != nil {
+			t.Errorf("secondsToTimestamp(%v) = %v, invalid protobuf Timestamp: %v", test.seconds, got, err)
+		}
+	}
+}
+
 func TestReadFamiliesProtobufError(t *testing.T) {
 	if _, err := readFamilies([]byte("x"), inProtobuf, pbFormat("bogus")); err == nil {
 		t.Error("expected error for unknown protobuf format")

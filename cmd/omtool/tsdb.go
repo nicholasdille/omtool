@@ -177,8 +177,8 @@ func runTSDBBackfill(blockPath, endpoint, tenantID, username, password, bearerTo
 	if endpoint == "" {
 		return fmt.Errorf("--url is required")
 	}
-	if pollInterval < 0 {
-		return fmt.Errorf("poll interval must not be negative")
+	if pollInterval <= 0 {
+		return fmt.Errorf("poll interval must be positive")
 	}
 	baseURL := strings.TrimRight(endpoint, "/") + "/api/v1/upload/block/" + url.PathEscape(block.ULID.String())
 	if dryRun {

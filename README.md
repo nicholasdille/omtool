@@ -47,7 +47,10 @@ Flags for `omtool convert`:
 - `--out` — output file (use `-` for stdout; default `-`).
 - `--from` — input format:
   - `auto` (default) — sniff the input: valid, control-byte-free UTF-8 is
-    treated as OpenMetrics text; anything else as protobuf.
+    treated as OpenMetrics text; anything else as protobuf. Plain-text
+    protobuf (`text`/`json` framing) is not distinguishable from OpenMetrics
+    text, so it must be passed with an explicit `--from=protobuf`; feeding it
+    to `auto` fails with a parse error that points to the right flag.
   - `openmetrics` (alias `om`) — OpenMetrics text exposition format.
   - `protobuf` (alias `pb`) — protobuf `MetricFamily` messages, framed per
     `--pb-format`. Snappy-framed (stream format) protobuf input is
@@ -207,7 +210,8 @@ Flags for `omtool tsdb backfill`:
 - `--username` / `--password` — HTTP basic auth.
 - `--bearer-token` — bearer token, overriding basic auth.
 - `--timeout` — HTTP request timeout (default `30s`).
-- `--poll-interval` — delay between validation checks (default `5s`).
+- `--poll-interval` — delay between validation checks, must be positive
+  (default `5s`).
 - `--header` — extra `"Key: Value"` header, repeatable.
 - `--insecure-skip-verify` — skip TLS certificate verification.
 - `--dry-run` — validate the block and report the upload without sending it.
