@@ -39,7 +39,7 @@ jobs:
           commits="$(git log "${last_tag}..HEAD" --format='%H')"
           if [ -z "$commits" ]; then
             echo "No commits since $last_tag, nothing to do."
-            exit 1
+            exit 0
           fi
 
           non_bot_authors="$(git log "${last_tag}..HEAD" --format='%ae' | grep -v -F -e "$BOT_EMAIL" -e "$RENOVATE_EMAIL" || true)"
