@@ -53,17 +53,21 @@ func buildVersion() string {
 	if !ok {
 		return "unknown"
 	}
-
-	version := info.Main.Version
-	if version != "" && version != "(devel)" {
+	if version := info.Main.Version; version != "" && version != "(devel)" {
 		// Go already stamps this with VCS info (e.g. a pseudo-version
 		// plus a "+dirty" suffix) when built in module mode, so it's
 		// usable as-is.
 		return version
 	}
+	return develVersion(info.Settings)
+}
 
+// develVersion builds the fallback "devel" version string from build
+// settings: plain "devel" without VCS revision metadata, or
+// "devel+<revision-12>[-dirty]" with module-mode VCS metadata.
+func develVersion(settings []debug.BuildSetting) string {
 	var revision, dirty string
-	for _, s := range info.Settings {
+	for _, s := range settings {
 		switch s.Key {
 		case "vcs.revision":
 			revision = s.Value

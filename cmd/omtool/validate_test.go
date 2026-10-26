@@ -2,10 +2,43 @@ package main
 
 import (
 	"bytes"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestNewValidateCmdExecute(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "valid.om")
+	data := "# TYPE foo gauge\nfoo 3\n# EOF\n"
+	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	var buf bytes.Buffer
+	cmd := newValidateCmd()
+	cmd.SetOut(&buf)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"--in", path})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	if got := buf.String(); !strings.Contains(got, "OK") {
+		t.Errorf("output = %q, want OK summary", got)
+	}
+}
+
+func TestNewValidateCmdExecuteError(t *testing.T) {
+	cmd := newValidateCmd()
+	cmd.SetOut(io.Discard)
+	cmd.SetErr(io.Discard)
+	cmd.SetArgs([]string{"--in", "nonexistent-om-file.om"})
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("expected error executing validate on missing file")
+	}
+}
 
 func TestRunValidateValidInput(t *testing.T) {
 	dir := t.TempDir()

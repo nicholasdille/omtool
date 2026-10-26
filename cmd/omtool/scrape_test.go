@@ -197,6 +197,22 @@ func TestRunScrapeEmptyResponse(t *testing.T) {
 	}
 }
 
+func TestRunScrapeOutputError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("# TYPE foo gauge\nfoo 3\n# EOF\n"))
+	}))
+	defer srv.Close()
+
+	// --out inside a missing parent directory: openOutput must fail.
+	err := runScrape(srv.URL, filepath.Join(t.TempDir(), "missing", "out.om"), outOpenMetrics, pbBinary, "", "", "", "ua", 5*time.Second, false, nil)
+	if err == nil {
+		t.Fatal("expected error opening output in missing directory")
+	}
+	if !strings.Contains(err.Error(), "opening output") {
+		t.Errorf("error = %v, want opening-output wrap", err)
+	}
+}
+
 func TestNewScrapeCmdWiring(t *testing.T) {
 	cmd := newScrapeCmd()
 	if cmd.Use != "scrape" {

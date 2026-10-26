@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"os"
+	"runtime/debug"
 	"strings"
 	"testing"
 )
@@ -24,6 +25,25 @@ func TestNewRootCmdWiring(t *testing.T) {
 func TestBuildVersionReturnsNonEmpty(t *testing.T) {
 	if v := buildVersion(); v == "" {
 		t.Error("buildVersion() returned empty string")
+	}
+}
+
+func TestDevelVersion(t *testing.T) {
+	for name, tc := range map[string]struct {
+		settings []debug.BuildSetting
+		want     string
+	}{
+		"no vcs metadata":         {nil, "devel"},
+		"revision only":           {[]debug.BuildSetting{{Key: "vcs.revision", Value: "abc123"}}, "devel+abc123"},
+		"clean revision":          {[]debug.BuildSetting{{Key: "vcs.revision", Value: "abc123"}, {Key: "vcs.modified", Value: "false"}}, "devel+abc123"},
+		"dirty revision":          {[]debug.BuildSetting{{Key: "vcs.revision", Value: "abc123"}, {Key: "vcs.modified", Value: "true"}}, "devel+abc123-dirty"},
+		"revision above 12 chars": {[]debug.BuildSetting{{Key: "vcs.revision", Value: "0123456789abcde"}, {Key: "vcs.modified", Value: "true"}}, "devel+0123456789ab-dirty"},
+		"dirty without revision":  {[]debug.BuildSetting{{Key: "vcs.modified", Value: "true"}}, "devel"},
+		"unrelated settings":      {[]debug.BuildSetting{{Key: "GOOS", Value: "linux"}}, "devel"},
+	} {
+		if got := develVersion(tc.settings); got != tc.want {
+			t.Errorf("%s: develVersion() = %q, want %q", name, got, tc.want)
+		}
 	}
 }
 
