@@ -1,12 +1,15 @@
 # omtool
 
 A single Go CLI, built around one shared OpenMetrics/protobuf parser
-internal to `cmd/omtool`, with four subcommands:
+internal to `cmd/omtool`, with the following subcommands:
 
 - **omtool convert** converts between [OpenMetrics](https://openmetrics.io/)
   text exposition format and Prometheus protobuf `MetricFamily` messages
   (`io.prometheus.client`, aka `client_model`), in either direction, plus a
   human readable output mode for inspection/debugging.
+- **omtool scrape** fetches metrics from an HTTP(S) endpoint exposing
+  OpenMetrics (or classic Prometheus) text format and writes them out in
+  any output format `omtool convert` supports.
 - **omtool send** sends metrics from a file to a Prometheus- or
   Mimir-compatible remote-write endpoint, as a Snappy-compressed protobuf
   `WriteRequest`.
@@ -247,6 +250,8 @@ Flags for `omtool tsdb backfill`:
   empty).
 - `--username` / `--password` — HTTP basic auth.
 - `--bearer-token` — bearer token, overriding basic auth.
+- `--user-agent` — value for the User-Agent header (default
+  `omtool-tsdb/1.0`).
 - `--timeout` — HTTP request timeout (default `30s`).
 - `--poll-interval` — delay between validation checks, must be positive
   (default `5s`).
