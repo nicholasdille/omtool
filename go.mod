@@ -59,7 +59,7 @@ require (
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/prometheus/client_golang v1.25.0 // indirect
-	github.com/prometheus/client_golang/exp v0.0.0-20261023115625-95ea5b861424 // indirect
+	github.com/prometheus/client_golang/exp v0.0.0-20261026112606-595b65527a90 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.23.0 // indirect
 	github.com/prometheus/sigv4 v0.5.0 // indirect
