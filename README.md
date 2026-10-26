@@ -39,6 +39,7 @@ go test -cover ./...
 ```sh
 ./omtool convert --in metrics.om --to protobuf --pb-format delimited --out metrics.pb
 ./omtool convert --in metrics.pb --from protobuf --to human
+./omtool scrape --url http://localhost:9100/metrics --out metrics.om
 ```
 
 Flags for `omtool convert`:
@@ -147,6 +148,43 @@ Flags for `omtool send`:
 
 Samples without an explicit timestamp (e.g. plain OpenMetrics samples) are
 stamped with the current time at send time.
+
+## omtool scrape
+
+Connects to an HTTP(S) endpoint that exposes its metrics as text exposition
+format — OpenMetrics, or the classic `text/plain; version=0.0.4` Prometheus
+format — and parses the response into metric families, which it then writes
+out in any output format `omtool convert` supports (default: OpenMetrics
+text on stdout). The parser used matches the endpoint's response
+`Content-Type`; when no usable one is sent, the body is sniffed for the
+OpenMetrics `# EOF` trailer.
+
+```sh
+./omtool scrape --url http://localhost:9100/metrics
+./omtool scrape --url http://localhost:9100/metrics --to protobuf --pb-format delimited --out metrics.pb
+./omtool scrape --url https://prom.example/metrics --bearer-token "$TOKEN"
+./omtool scrape --url http://localhost:3000/api/v1/all_raw_metrics --timeout 5s
+```
+
+Every request advertises `Accept: application/openmetrics-text;
+version=1.0.0, text/plain; version=0.0.4; q=0.5` — the standard Prometheus
+scrape negotiation — but the response is parsed per the Content-Type the
+server actually selects (or by body sniffing when it lies/omits).
+
+Flags for `omtool scrape`:
+
+- `--url` — endpoint to scrape, required.
+- `--out` — output file (use `-` for stdout; default `-`).
+- `--to` / `--pb-format` — same meaning as in `omtool convert`; default
+  `--to=openmetrics`.
+- `--header` — extra `"Key: Value"` header, repeatable; may override the
+  default Accept header.
+- `--username` / `--password` — HTTP basic auth.
+- `--bearer-token` — `Authorization: Bearer` token (overrides basic auth).
+- `--user-agent` — value for the User-Agent header (default
+  `omtool-scrape/1.0`).
+- `--timeout` — HTTP request timeout (default `30s`).
+- `--insecure-skip-verify` — skip TLS certificate verification.
 
 ## omtool validate
 

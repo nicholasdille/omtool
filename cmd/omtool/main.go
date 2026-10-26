@@ -1,14 +1,15 @@
 // Command omtool converts Prometheus/OpenMetrics metric data between
 // OpenMetrics text exposition format, Prometheus protobuf MetricFamily
 // messages (io.prometheus.client.MetricFamily, aka client_model), and
-// human readable text, and can send metric data to a Prometheus/Mimir
-// remote-write endpoint.
+// human readable text, and can scrape HTTP(S) endpoints exposing
+// OpenMetrics text.
 //
 // It merges three previous single-purpose CLIs, openmetrics2proto,
 // proto2text and remotewrite, into one tool whose "convert" subcommand
 // auto-detects (or is told) its input format and can target any of the
-// supported output formats, and whose "send" subcommand ships metric data
-// to a remote-write endpoint.
+// supported output formats, whose "scrape" subcommand scrapes HTTP(S)
+// endpoints exposing OpenMetrics text, and whose "send" subcommand ships
+// metric data to a remote-write endpoint.
 package main
 
 import (
@@ -33,13 +34,13 @@ func main() {
 func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "omtool",
-		Short:         "Convert, send, and store Prometheus/OpenMetrics metric data",
+		Short:         "Convert, scrape, send, and store Prometheus/OpenMetrics metric data",
 		Long:          `omtool converts Prometheus/OpenMetrics metric data between formats and TSDB blocks.`,
 		Version:       buildVersion(),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
-	root.AddCommand(newConvertCmd(), newSendCmd(), newValidateCmd(), newTSDBCmd())
+	root.AddCommand(newConvertCmd(), newSendCmd(), newScrapeCmd(), newValidateCmd(), newTSDBCmd())
 	return root
 }
 

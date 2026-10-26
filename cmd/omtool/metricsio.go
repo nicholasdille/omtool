@@ -1,8 +1,8 @@
 package main
 
 // This file implements OpenMetrics/protobuf parsing and framing shared by
-// omtool's "convert" and "send" subcommands, so both accept the same input
-// formats.
+// omtool's "convert", "scrape" and "send" subcommands, so all of them accept
+// the same input formats.
 
 import (
 	"bufio"
@@ -99,12 +99,28 @@ type metricGroup struct {
 	order       []string
 }
 
+// openmetricsContentType is the OpenMetrics text exposition media type: the
+// strict parsing dialect (mandatory "# EOF" trailer) selected by
+// "omtool validate" and by response Content-Types naming OpenMetrics in
+// "omtool scrape".
+const openmetricsContentType = "application/openmetrics-text"
+
 // parseOpenMetrics parses OpenMetrics exposition text and groups the
 // resulting samples into Prometheus protobuf MetricFamily messages,
 // preserving the order in which metric families first appear in the input.
+// See parseTextFamilies for the shared grouping implementation.
 func parseOpenMetrics(data []byte) ([]*dto.MetricFamily, error) {
+	return parseTextFamilies(data, openmetricsContentType)
+}
+
+// parseTextFamilies parses text exposition media (OpenMetrics text or
+// classic Prometheus "text/plain" exposition, depending on mediaType) and
+// groups the resulting samples into Prometheus protobuf MetricFamily
+// messages, preserving the order in which metric families first appear in
+// the input.
+func parseTextFamilies(data []byte, mediaType string) ([]*dto.MetricFamily, error) {
 	st := labels.NewSymbolTable()
-	p, err := textparse.New(data, "application/openmetrics-text", st, textparse.ParserOptions{})
+	p, err := textparse.New(data, mediaType, st, textparse.ParserOptions{})
 	if err != nil {
 		return nil, err
 	}
