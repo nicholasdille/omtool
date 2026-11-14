@@ -60,7 +60,7 @@ require (
 	github.com/pandatix/go-abnf v0.5.5 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/prometheus/client_golang v1.25.0 // indirect
-	github.com/prometheus/client_golang/exp v0.0.0-20261105144753-f54d392372dc // indirect
+	github.com/prometheus/client_golang/exp v0.0.0-20261113202007-c86c2471ded9 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.23.0 // indirect
 	github.com/prometheus/sigv4 v0.5.0 // indirect
