@@ -23,8 +23,8 @@ require (
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.10.1 // indirect
 	github.com/alecthomas/units v0.0.0-20240927000941-0f3dac36c52b // indirect
 	github.com/aws/aws-sdk-go-v2 v1.48.2 // indirect
-	github.com/aws/aws-sdk-go-v2/config v1.33.22 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.21.4 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.33.23 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.21.5 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.20.11 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.14 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.14 // indirect
@@ -33,7 +33,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.14 // indirect
 	github.com/aws/aws-sdk-go-v2/service/signin v1.14.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.39.7 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.44.6 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.44.7 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.53.2 // indirect
 	github.com/aws/smithy-go v1.28.11 // indirect
 	github.com/bboreham/go-loser v0.0.0-20230920113527-fcc2c21820a3 // indirect
@@ -77,7 +77,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.5 // indirect
 	go.yaml.in/yaml/v3 v3.0.6 // indirect
 	golang.org/x/crypto v0.59.0 // indirect
-	golang.org/x/exp v0.0.0-20261127181632-b10a66b71b35 // indirect
+	golang.org/x/exp v0.0.0-20261128033645-f63ec7c7eed0 // indirect
 	golang.org/x/net v0.63.0 // indirect
 	golang.org/x/oauth2 v0.38.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
